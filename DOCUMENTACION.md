@@ -13,7 +13,7 @@ Archivo destinado EXCLUSIVAMENTE a agentes (no a humanos). Es un log append-only
 ---
 
 ## 2026-07-14 — Regla de documentación para agentes
-- Qué se hizo: se agregó a AGENTS.md/CLAUDE.md la regla de mantener este DOCUMENTACION.md; se creó este archivo con su formato.
-- Archivos: AGENTS.md, CLAUDE.md, DOCUMENTACION.md
-- Commit: pendiente
-- Notas: leído solo por agentes; log append-only.
+- Qué se hizo: se agregó a AGENTS.md/CLAUDE.md la regla de mantener este DOCUMENTACION.md; se creó este archivo con su formato; se agregó la skill visualize-data.
+- Archivos: AGENTS.md, CLAUDE.md, DOCUMENTACION.md, skills/visualize-data.md
+- Commit: be5c054 (creación) + este commit que completa el registro
+- Notas: leído solo por agentes; log append-only. Un commit no puede contener su propio hash, por eso el registro se completa en el commit siguiente.
