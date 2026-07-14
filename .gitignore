@@ -8,3 +8,12 @@ __pycache__/
 dist/
 build/
 .DS_Store
+
+# Datos reales (aunque sean anonimizados): jamas versionar. Repo publico.
+*.xlsx
+*.xls
+*.csv
+*.tsv
+data/
+datos/
+datos_limpios/
