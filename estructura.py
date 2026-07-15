@@ -29,7 +29,7 @@ Salidas:
   reportes/<tipo>_filas_eliminadas.csv           filas descartadas (auditoria)
   reportes/impacto_persistencia_<tipo>.csv       conteos / % vs df limpio
   reportes/centros_eliminados_<tipo>.csv         detalle por centro eliminado
-  reportes/resumen_digestion_fase1.txt           resumen consolidado
+  reportes/resumen_fase1.txt                     resumen consolidado
   reportes/impacto_persistencia_fase1.csv        impacto de ambos tipos juntos
 """
 
@@ -88,7 +88,7 @@ DIAS_MAX = {"Dias4": 30, "Dias5": 31, "Dias6": 30}  # abril, mayo, junio
 
 # Si True, un centro solo se considera persistente si ademas esta presente en
 # ambos anios del OTRO tipo (interseccion simetrica).
-# Ver reportes/reporte_digestion_fase1.ipynb.
+# Ver reportes/reporte_fase1.ipynb.
 CRUZAR_TIPOS_PERSISTENCIA = True
 
 
@@ -391,7 +391,7 @@ def aplicar_persistencia_ambos_tipos(
     )
 
     lineas = [
-        "=== DIGESTION FASE 1 — BASE LONGITUDINAL POR CENTRO (2025 <-> 2026) ===",
+        "=== FASE 1 — BASE LONGITUDINAL POR CENTRO (2025 <-> 2026) ===",
         "",
         f"Cruce entre tipos (interseccion de centros persistentes): "
         f"{'activado' if cruzar_tipos else 'desactivado'}",
@@ -415,7 +415,7 @@ def aplicar_persistencia_ambos_tipos(
         "-> 0 desfasaje de centro entre 2025 y 2026."
     )
     resumen_txt = "\n".join(lineas) + "\n"
-    (carpeta_reportes / "resumen_digestion_fase1.txt").write_text(
+    (carpeta_reportes / "resumen_fase1.txt").write_text(
         resumen_txt, encoding="utf-8"
     )
     # Compat con el resumen previo de solo-docentes

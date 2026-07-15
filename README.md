@@ -8,7 +8,7 @@ Pipeline y reportes del Reto 1 CREA (Ceibal).
 - `compare_datasets_generic.py` — comparación / inconsistencias entre años
 - `reportes/` — notebooks (misma altura que `.venv`)
   - `comparacion_inconsistencias.ipynb` — % variables/filas inconsistentes 2025 vs 2026
-  - `reporte_digestion_fase1.ipynb` — impacto del filtro de persistencia
+  - `reporte_fase1.ipynb` — pipeline crudo→limpio→persistente + impacto
   - `analisis_centros.ipynb` — ID_CENTRO entre tipos
   - `hallazgos_estudiantes.ipynb` — exploración de uso
   - `Reportes_exploracion.ipynb` — QA legado

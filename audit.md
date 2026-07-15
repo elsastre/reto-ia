@@ -59,7 +59,7 @@ Ampliado con centros/persistencia y métricas de inconsistencia:
 | Notebook | Rol |
 |---|---|
 | `comparacion_inconsistencias.ipynb` | QA 2025 vs 2026 (ambos tipos) |
-| `reporte_digestion_fase1.ipynb` | Impacto del filtro de persistencia |
+| `reporte_fase1.ipynb` | Pipeline crudo→limpio→persistente + impacto |
 | `analisis_centros.ipynb` | ID_CENTRO entre tipos |
 | `hallazgos_estudiantes.ipynb` | Exploración de uso |
 | `Reportes_exploracion.ipynb` | QA legado |
