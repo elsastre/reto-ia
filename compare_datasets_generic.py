@@ -9,6 +9,7 @@ falsos desfases por diferencias de formato.
 """
 
 import unicodedata
+from pathlib import Path
 
 import pandas as pd
 
@@ -345,3 +346,105 @@ def limpiar_duplicados(datasets: dict, subset=None, keep: str = "first", inplace
         else:
             datasets[nombre] = df[~mask].reset_index(drop=True)
     return resumen
+
+
+# ======================================================================
+# Utilidades de carga / preparación / detección (centralizadas para notebooks)
+# ======================================================================
+def cargar(ruta) -> pd.DataFrame:
+    """Lee un dataset segun su extension: .xlsx/.xls con read_excel, el resto
+    (.csv/.txt) con read_csv."""
+    ruta = Path(ruta)
+    if ruta.suffix.lower() in (".xlsx", ".xls"):
+        return pd.read_excel(ruta)
+    return pd.read_csv(ruta, low_memory=False)
+
+
+def preparar_para_comparar(a: pd.DataFrame, b: pd.DataFrame, verbose: bool = True):
+    """Deja dos datasets listos para compare_datasets / detectar_desfasajes.
+
+    Resuelve dos casos que rompen el merge interno de compare_datasets:
+      1. Columnas comunes vacias en uno de los dos datasets -> se excluyen
+         (una columna toda-NaN se infiere float64 y no aporta comparacion).
+      2. Columnas comunes numericas en uno y texto en el otro -> se pasan a
+         texto en ambos para poder compararlas como categorias.
+
+    Devuelve (a, b) como copias nuevas; no modifica los originales.
+    """
+    a, b = a.copy(), b.copy()
+    comunes = [c for c in a.columns if c in b.columns]
+    vacias, mixtas = [], []
+    for col in comunes:
+        if a[col].notna().sum() == 0 or b[col].notna().sum() == 0:
+            a = a.drop(columns=col)
+            b = b.drop(columns=col)
+            vacias.append(col)
+            continue
+        num_a = pd.api.types.is_numeric_dtype(a[col])
+        num_b = pd.api.types.is_numeric_dtype(b[col])
+        if num_a != num_b:
+            a[col] = a[col].astype("string")
+            b[col] = b[col].astype("string")
+            mixtas.append(col)
+    if verbose:
+        print("Columnas vacias en un dataset (excluidas):", vacias or "(ninguna)")
+        print("Columnas mixto (num/texto) pasadas a texto:", mixtas or "(ninguna)")
+    return a, b
+
+
+def detectar_desfasajes(df1, df2, name1="df1", name2="df2", tolerance=0.0,
+                        normalize=True, con_filas=False) -> dict:
+    """Deteccion operable derivada de compare_datasets (que solo reporta).
+
+    Analoga a detectar_duplicados: en vez de texto, devuelve estructuras
+    listas para filtrar/actuar. Retorna un dict con:
+      - 'categorias': DataFrame largo [columna, valor, solo_en] con cada valor
+        categorico que aparece en un solo dataset. Si con_filas=True se agrega
+        la columna 'n_filas' (cuantas filas cubre ese valor en su dataset) y se
+        ordena por columna y n_filas.
+      - 'cantidades': DataFrame de combinaciones cuya suma numerica difiere.
+      - 'resumen': el dict 'resumen' de compare_datasets (para no re-computar).
+    """
+    r = compare_datasets(df1, df2, name1, name2, tolerance, normalize)
+    filas = []
+    for col, det in r["categorias_desfasadas"].items():
+        for valor in det[f"solo_en_{name1}"]:
+            filas.append({"columna": col, "valor": valor, "solo_en": name1})
+        for valor in det[f"solo_en_{name2}"]:
+            filas.append({"columna": col, "valor": valor, "solo_en": name2})
+    categorias = pd.DataFrame(filas, columns=["columna", "valor", "solo_en"])
+
+    if con_filas and not categorias.empty:
+        # compare_datasets normaliza el texto antes de comparar; para contar
+        # filas hay que aplicar la MISMA normalizacion a los valores originales.
+        prep = (lambda s: s.map(_normalize_text)) if normalize else (lambda s: s)
+        cols = categorias["columna"].unique()
+        vc = {
+            name1: {c: prep(df1[c]).value_counts() for c in cols},
+            name2: {c: prep(df2[c]).value_counts() for c in cols},
+        }
+        categorias["n_filas"] = categorias.apply(
+            lambda x: int(vc[x["solo_en"]][x["columna"]].get(x["valor"], 0)), axis=1
+        )
+        categorias = (categorias
+                      .sort_values(["columna", "n_filas"], ascending=[True, False])
+                      .reset_index(drop=True))
+
+    return {"categorias": categorias,
+            "cantidades": r["cantidades_desfasadas"],
+            "resumen": r["resumen"]}
+
+
+def limpiar_duplicados_df(df: pd.DataFrame, subset=None, keep: str = "first",
+                          verbose: bool = False) -> pd.DataFrame:
+    """Limpieza: devuelve un DataFrame NUEVO sin las filas duplicadas.
+
+    Contraparte de detectar_duplicados (que devuelve la mascara): aca se aplica
+    esa mascara y se retorna el dataset limpio, sin modificar el original (a
+    diferencia de limpiar_duplicados, que opera in-place sobre un dict).
+    """
+    mask = detectar_duplicados(df, subset=subset, keep=keep)
+    limpio = df[~mask].reset_index(drop=True)
+    if verbose:
+        print(f"  {int(mask.sum())} filas duplicadas eliminadas: {len(df)} -> {len(limpio)}")
+    return limpio

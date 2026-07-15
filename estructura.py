@@ -28,13 +28,35 @@ import numpy as np
 # ======================================================================
 # CONFIG
 # ======================================================================
-SALIDA = Path(r"C:\Users\Matihas\Desktop\Datos Ceibal 2025-2026\processed")
+# La carpeta de datos se resuelve automaticamente segun la maquina: se toma
+# el primer candidato que exista. Asi el script corre igual en Windows (equipo
+# de Matihas) y en Mac (equipo de Gustavo) sin editar rutas a mano.
+CANDIDATOS_DATOS = [
+    Path(r"C:\Users\Matihas\Desktop\Datos Ceibal 2025-2026"),
+    Path.home() / "Downloads" / "Datos Ceibal 2025-2025",
+    Path.home() / "Downloads" / "Datos Ceibal Reto 1 2026",
+]
+
+
+def _resolver_carpeta_datos() -> Path:
+    for c in CANDIDATOS_DATOS:
+        if c.exists():
+            return c
+    raise FileNotFoundError(
+        "No encontre ninguna carpeta de datos. Candidatos probados:\n  - "
+        + "\n  - ".join(str(c) for c in CANDIDATOS_DATOS)
+    )
+
+
+CARPETA_DATOS = _resolver_carpeta_datos()
+# Salida fuera del repo (datos sensibles): subcarpeta 'processed' junto a los datos.
+SALIDA = CARPETA_DATOS / "processed"
 
 BASES = [
-    {"ruta": r"C:\Users\Matihas\Desktop\Datos Ceibal 2025-2026\datosUCU2025_estu.xlsx", "tipo": "estudiantes", "anio": 2025},
-    {"ruta": r"C:\Users\Matihas\Desktop\Datos Ceibal 2025-2026\datosUCU2026_estu.xlsx", "tipo": "estudiantes", "anio": 2026},
-    {"ruta": r"C:\Users\Matihas\Desktop\Datos Ceibal 2025-2026\datosUCU2025_doc.xlsx",  "tipo": "docentes",    "anio": 2025},
-    {"ruta": r"C:\Users\Matihas\Desktop\Datos Ceibal 2025-2026\datosUCU2026_doc.xlsx",  "tipo": "docentes",    "anio": 2026},
+    {"ruta": CARPETA_DATOS / "datosUCU2025_estu.xlsx", "tipo": "estudiantes", "anio": 2025},
+    {"ruta": CARPETA_DATOS / "datosUCU2026_estu.xlsx", "tipo": "estudiantes", "anio": 2026},
+    {"ruta": CARPETA_DATOS / "datosUCU2025_doc.xlsx",  "tipo": "docentes",    "anio": 2025},
+    {"ruta": CARPETA_DATOS / "datosUCU2026_doc.xlsx",  "tipo": "docentes",    "anio": 2026},
 ]
 
 DIAS = ["Dias4", "Dias5", "Dias6"]
@@ -171,28 +193,18 @@ def panel(d25: pd.DataFrame, d26: pd.DataFrame, cols: list[str], etiqueta: str) 
 # ======================================================================
 def main():
     SALIDA.mkdir(parents=True, exist_ok=True)
-    limpio = {}
+    print("Carpeta de datos:", CARPETA_DATOS)
+
+    # Solo se generan los datasets LIMPIOS (uno por base), en CSV.
+    # Las transformaciones de panel/colapso (funciones panel() y
+    # colapsar_docentes()) quedan disponibles pero no se ejecutan aca.
     for base in BASES:
         df = limpiar(base)
-        df.to_parquet(SALIDA / f"{base['tipo']}_{base['anio']}_clean.parquet")
-        limpio[(base["tipo"], base["anio"])] = df
+        salida_csv = SALIDA / f"{base['tipo']}_{base['anio']}_clean.csv"
+        df.to_csv(salida_csv, index=False)
+        print(f"  -> {salida_csv.name} ({len(df)} filas, {len(df.columns)} cols)")
 
-    # --- Estudiantes: ya es 1 fila por persona ---
-    est_cols = ["dias_totales", "accedio", "Sexo", "vuln_q", "Rubro", "dept_nombre", "ZONA"]
-    panel_est = panel(limpio[("estudiantes", 2025)], limpio[("estudiantes", 2026)],
-                      est_cols, "estudiantes")
-    panel_est.to_parquet(SALIDA / "panel_estudiantes.parquet")
-
-    # --- Docentes: colapsar a persona y despues panel ---
-    doc25 = colapsar_docentes(limpio[("docentes", 2025)])
-    doc26 = colapsar_docentes(limpio[("docentes", 2026)])
-    doc25.to_parquet(SALIDA / "docentes_2025_persona.parquet")
-    doc26.to_parquet(SALIDA / "docentes_2026_persona.parquet")
-    doc_cols = ["dias_totales", "accedio", "Sexo", "vuln_q", "n_centros", "n_materias"]
-    panel_doc = panel(doc25, doc26, doc_cols, "docentes")
-    panel_doc.to_parquet(SALIDA / "panel_docentes.parquet")
-
-    print("\nOK. Salidas en:", SALIDA)
+    print("\nOK. Datasets limpios (CSV) en:", SALIDA)
 
 
 if __name__ == "__main__":
