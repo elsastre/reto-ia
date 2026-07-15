@@ -1,0 +1,13 @@
+---
+description: Modo copiloto — no acceder a datasets reales del Ceibal
+alwaysApply: true
+---
+
+# Sin acceso a datos reales
+
+Trabajá solo como copiloto de código. Seguí `CLAUDE.md`.
+
+- No leas ni listes carpetas `Datos Ceibal*`, ni CSV/XLSX fuera del repo.
+- No ejecutes `estructura.py` ni notebooks contra datos reales.
+- No commitees outputs de notebooks ni muestras de IDs/filas.
+- Para probar: DataFrames sintéticos o fixtures inventados.
